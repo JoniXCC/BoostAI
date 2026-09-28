@@ -43,6 +43,8 @@ def find_target(processes: list[ProcessInfo], params: ProcessParams) -> ProcessI
 
 def app_instances(target: ProcessInfo, processes: list[ProcessInfo]) -> list[ProcessInfo]:
     """All processes of the same application (same executable, same owner) - e.g. every chrome.exe."""
+    if not target.exe or not target.username:
+        return [target]  # identity unknown: never group unrelated processes together
     exe = _norm(target.exe)
     return [
         p for p in processes

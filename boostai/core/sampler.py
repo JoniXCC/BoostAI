@@ -39,7 +39,8 @@ class SystemSampler:
             pdh_values = self.pdh.sample()
             cpu = self.cpu.sample()
             processes = self.processes.collect() if include_processes else []
-            mem = memory.collect_memory(pdh_values.get("hard_faults_per_sec"), self.processes.compressed_bytes)
+            mem = memory.collect_memory(pdh_values.get("hard_faults_per_sec"), self.processes.compressed_bytes,
+                                        detailed=include_temperatures)  # scans get the expensive extras
             activity = self.disk_activity.sample(pdh_values)
             temps = self.temperatures.read() if include_temperatures else TemperatureStatus(
                 message="Temperatures are read during scans.")

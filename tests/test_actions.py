@@ -181,3 +181,15 @@ def test_no_shell_or_eval_in_action_code():
 
 def test_mode_enum_values():
     assert OptimizationMode("safe") == OptimizationMode.SAFE
+
+
+def test_processes_with_unknown_identity_are_not_grouped():
+    from boostai.actions.handlers.process import app_instances
+
+    a = proc(10, "svchost.exe", user=None)
+    a.exe = None
+    b = proc(11, "System", user=None)
+    b.exe = None
+    assert app_instances(a, [a, b]) == [a]
+    c, d = proc(20, "chrome.exe"), proc(21, "chrome.exe", create_time=2.0)
+    assert len(app_instances(c, [c, d])) == 2

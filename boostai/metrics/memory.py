@@ -9,24 +9,35 @@ from boostai.utils import winapi
 
 
 def collect_memory(
-    hard_faults_per_sec: float | None = None, compressed_bytes: int | None = None
+    hard_faults_per_sec: float | None = None, compressed_bytes: int | None = None, detailed: bool = True
 ) -> MemorySnapshot:
-    vm = psutil.virtual_memory()
-    perf = winapi.get_performance_info() or {}
-    pagefile_total = pagefile_used = None
-    try:
-        sw = psutil.swap_memory()
-        pagefile_total, pagefile_used = int(sw.total), int(sw.used)
-    except (OSError, RuntimeError):
-        pass
+    """RAM + commit via one cheap GlobalMemoryStatusEx call.
+
+    ``detailed`` adds the system cache size (GetPerformanceInfo) and page-file usage, which
+    are comparatively expensive Windows queries, so the background monitor skips them.
+    """
+    ms = winapi.global_memory_status()
+    if ms is None:
+        vm = psutil.virtual_memory()
+        ms = {"total": int(vm.total), "available": int(vm.available), "commit_total": None, "commit_limit": None}
+    total, available = int(ms["total"]), int(ms["available"])
+    cached = pagefile_total = pagefile_used = None
+    if detailed:
+        perf = winapi.get_performance_info() or {}
+        cached = perf.get("system_cache")
+        try:
+            sw = psutil.swap_memory()
+            pagefile_total, pagefile_used = int(sw.total), int(sw.used)
+        except (OSError, RuntimeError):
+            pass
     return MemorySnapshot(
-        total=int(vm.total),
-        available=int(vm.available),
-        used=int(vm.total - vm.available),
-        percent=float(vm.percent),
-        cached=perf.get("system_cache"),
-        commit_total=perf.get("commit_total"),
-        commit_limit=perf.get("commit_limit"),
+        total=total,
+        available=available,
+        used=total - available,
+        percent=round(100.0 * (total - available) / total, 1) if total else 0.0,
+        cached=cached,
+        commit_total=ms.get("commit_total"),
+        commit_limit=ms.get("commit_limit"),
         pagefile_total=pagefile_total,
         pagefile_used=pagefile_used,
         hard_faults_per_sec=hard_faults_per_sec,

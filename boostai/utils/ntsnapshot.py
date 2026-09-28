@@ -106,19 +106,25 @@ def snapshot() -> list[RawProcess] | None:
     """Return all processes, or ``None`` if the API is unavailable (caller falls back to psutil)."""
     if not IS_WINDOWS:
         return None
+    global _buffer
     ntdll = ctypes.WinDLL("ntdll")
-    size = 1 << 20
     for _ in range(8):
-        buf = ctypes.create_string_buffer(size)
+        # Reuse one buffer between calls (the monitor calls this every few seconds).
+        if _buffer is None:
+            _buffer = ctypes.create_string_buffer(1 << 21)
+        size = len(_buffer)
         needed = wintypes.ULONG(0)
-        status = ntdll.NtQuerySystemInformation(SystemProcessInformation, buf, size, ctypes.byref(needed)) & 0xFFFFFFFF
+        status = ntdll.NtQuerySystemInformation(SystemProcessInformation, _buffer, size, ctypes.byref(needed)) & 0xFFFFFFFF
         if status == STATUS_INFO_LENGTH_MISMATCH:
-            size = max(size * 2, needed.value + 65536)
+            _buffer = ctypes.create_string_buffer(max(size * 2, int(needed.value * 1.25) + 65536))
             continue
         if status != 0:
             return None
-        return _parse(buf)
+        return _parse(_buffer)
     return None
+
+
+_buffer = None
 
 
 def _parse(buf) -> list[RawProcess]:
