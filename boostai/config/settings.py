@@ -62,7 +62,7 @@ class DetectionSettings(BaseModel):
     disk_free_warn_gb: float = Field(15.0, ge=1.0)
     ram_high_percent: float = Field(85.0, ge=50.0, le=99.0)
     gpu_temp_warn_c: float = Field(87.0, ge=60.0, le=110.0)
-    process_count_warn: int = Field(320, ge=100)
+    process_count_warn: int = Field(450, ge=100)
 
 
 class AISettings(BaseModel):
@@ -96,6 +96,8 @@ class Settings(BaseModel):
     offer_restore_point: bool = True
     tray_notifications: bool = True
     cleanup_min_age_hours: float = Field(24.0, ge=1.0, le=720.0)
+    startup_keep_ids: list[str] = Field(default_factory=list)  # items the user chose to keep
+    active_gaming_session: str | None = None
 
 
 class SettingsStore:

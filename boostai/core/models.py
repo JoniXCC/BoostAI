@@ -6,11 +6,13 @@ Nothing here performs I/O.
 
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import dataclass, field
 from enum import Enum
 
 KB = 1024
+_HASH_SUFFIX = re.compile(r"_[0-9A-Fa-f]{16,}$")
 MB = 1024**2
 GB = 1024**3
 
@@ -248,6 +250,14 @@ class StartupItem:
     @property
     def requires_admin(self) -> bool:
         return self.source.requires_admin
+
+    @property
+    def display_name(self) -> str:
+        """Human-friendly name (strips per-install hash suffixes such as Edge's auto-launch entry)."""
+        name = _HASH_SUFFIX.sub("", self.name)
+        if name.lower() == "microsoftedgeautolaunch":
+            return "Microsoft Edge (auto-launch)"
+        return name
 
     @property
     def executable_name(self) -> str | None:
