@@ -26,7 +26,10 @@ def test_main_window_pages_render(qtbot, tmp_path):
                 continue  # these start background OS enumeration; covered by integration runs
             window.show_page(key)
             assert window.stack.currentWidget() is window.pages[key]
-        assert window.pages["issues"].list.count() == len(result.issues)
+        issues_page = window.pages["issues"]
+        # The window may also run its own automatic scan; compare against whatever result it displays.
+        assert issues_page.result is not None
+        assert issues_page.list.count() == len(issues_page.result.issues)
         window._really_quit = True
     finally:
         engine.shutdown()
