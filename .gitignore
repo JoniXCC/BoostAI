@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Environments / secrets
+.venv/
+venv/
+.env
+
+# Runtime data (the app stores its data under %LOCALAPPDATA%\BoostAI by default)
+data/*
+!data/.gitkeep
+*.db
+*.db-wal
+*.db-shm
+*.log
+
+# Packaging output
+build/
+dist/
+installer_output/
+
+# IDE
+.vscode/
+.idea/

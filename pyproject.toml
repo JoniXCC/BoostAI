@@ -1,0 +1,35 @@
+[project]
+name = "boostai"
+version = "1.0.0"
+description = "BoostAI - a safe, measurement-driven Windows performance diagnostic and optimization tool."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+authors = [{ name = "BoostAI contributors" }]
+dependencies = [
+    "PySide6>=6.7",
+    "pyqtgraph>=0.13.7",
+    "numpy>=1.26",
+    "psutil>=5.9.8",
+    "pywin32>=306; sys_platform == 'win32'",
+    "pydantic>=2.6",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-qt>=4.4", "pyinstaller>=6.10"]
+
+[project.scripts]
+boostai = "boostai.main:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"
+qt_api = "pyside6"
+markers = [
+    "integration: reads real (read-only) system metrics from this machine",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
