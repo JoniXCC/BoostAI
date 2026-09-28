@@ -165,14 +165,17 @@ def test_expired_approval_rejected(executor):
 def test_no_shell_or_eval_in_action_code():
     """Static guard: the action layer never shells out or evaluates text."""
     import pathlib
+    import re
 
     root = pathlib.Path(__file__).resolve().parents[1] / "boostai"
+    patterns = [r"os\.system\(", r"shell=True", r"(?<![\w.])eval\(", r"(?<![\w.])exec\(", r"(?i)powershell",
+                r"(?i)cmd(\.exe)?\s+/c"]
     offenders = []
     for path in root.rglob("*.py"):
         text = path.read_text(encoding="utf-8")
-        for needle in ("os.system(", "shell=True", "eval(", "exec(", "powershell", "cmd.exe /c"):
-            if needle in text:
-                offenders.append(f"{path.name}: {needle}")
+        for pat in patterns:
+            if re.search(pat, text):
+                offenders.append(f"{path.name}: {pat}")
     assert offenders == []
 
 

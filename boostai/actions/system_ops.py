@@ -60,13 +60,18 @@ class SystemOps(Protocol):
 class WindowsSystemOps:
     def __init__(self, collector: ProcessCollector | None = None) -> None:
         self._collector = collector or ProcessCollector()
+        self._service_pids: tuple[float, set[int]] | None = None
 
     # ------------------------------------------------------------- processes
     def list_processes(self) -> list[ProcessInfo]:
         return self._collector.collect()
 
     def service_pids(self) -> set[int]:
-        return {s.pid for s in services.collect_services() if s.pid}
+        # Service enumeration takes ~0.4 s; cache briefly so validating several actions stays fast.
+        now = time.monotonic()
+        if self._service_pids is None or now - self._service_pids[0] > 10.0:
+            self._service_pids = (now, {s.pid for s in services.collect_services() if s.pid})
+        return set(self._service_pids[1])
 
     def process_cmdline(self, pid: int) -> list[str] | None:
         try:

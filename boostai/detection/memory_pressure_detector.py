@@ -32,7 +32,7 @@ def detect(ctx: DetectionContext, leak_processes: set[str]) -> list[Issue]:
 
 def _pressure_issue(ctx: DetectionContext, leak_processes: set[str]) -> Issue:
     mem = ctx.snapshot.memory
-    groups = [g for g in group_processes(ctx.snapshot.processes) if g.name.lower() not in ("memcompression", "system")]
+    groups = [g for g in group_processes(ctx.snapshot.processes) if g.name.lower() not in ("memcompression", "memory compression", "system", "registry")]
     top = groups[:6]
     used = max(mem.used, 1)
     largest_share = top[0].rss / used if top else 0.0
@@ -96,7 +96,8 @@ def _pressure_issue(ctx: DetectionContext, leak_processes: set[str]) -> Issue:
     return Issue(
         key=IssueType.MEMORY_PRESSURE.value,
         type=IssueType.MEMORY_PRESSURE,
-        title=f"High memory usage ({mem.percent:.0f}%)",
+        title=(f"High memory usage ({mem.percent:.0f}%)" if mem.percent >= ctx.settings.ram_high_percent
+               else f"High memory pressure (commit {mem.commit_percent or 0:.0f}%, RAM {mem.percent:.0f}%)"),
         severity=severity,
         confidence=Confidence.HIGH,
         root_cause=cause,

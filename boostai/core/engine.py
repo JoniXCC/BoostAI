@@ -197,6 +197,23 @@ class BoostEngine:
     def undo(self, record_id: int):
         return self.rollback_manager.rollback(record_id)
 
+    # ------------------------------------------------------- background watch
+    def watch(self) -> list:
+        """Cheap periodic check (no scan): likely leaks and severe memory pressure from monitor history."""
+        from boostai.core.issues import Confidence, Severity
+        from boostai.detection import memory_leak_detector, memory_pressure_detector
+        from boostai.detection.base import DetectionContext
+
+        snap = self.monitor.latest
+        if snap is None or not snap.processes:
+            return []
+        ctx = DetectionContext(snapshot=snap, system_info=self.system_info(), history=self.history,
+                               baselines=self.baselines, settings=self.settings.detection)
+        leaks = memory_leak_detector.detect(ctx)
+        names = {str(i.metrics.get("process", "")).lower() for i in leaks}
+        found = leaks + memory_pressure_detector.detect(ctx, names)
+        return [i for i in found if i.severity in (Severity.HIGH, Severity.CRITICAL) and i.confidence != Confidence.LOW]
+
     # ---------------------------------------------------------- gaming mode
     def gaming_check(self) -> GamingCheck:
         snap = self.sampler.snapshot(include_processes=True, include_temperatures=True, include_power=True)
